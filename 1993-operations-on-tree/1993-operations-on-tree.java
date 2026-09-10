@@ -1,17 +1,26 @@
 class LockingTree {
     int[] lock;
     int n;
-    Map<Integer, List<Integer>> map;
+    List<Integer>[] adj;
+    Set<Integer>[] locked;
     int[] parent;
+    
     public LockingTree(int[] parent) {
         n=parent.length;
         lock=new int[n];
         Arrays.fill(lock, -1);
-        map=new HashMap<>();
+        adj=new ArrayList[n];
+        locked=new HashSet[n];
+
+        for(int i=0;i<n;i++){
+            adj[i]=new ArrayList<>();
+        }
+
+        for(int i=0;i<n;i++){
+            locked[i]=new HashSet<>();
+        }
         for(int i=1;i<n;i++){
-            List<Integer> l = map.getOrDefault(parent[i], new ArrayList<>());
-            l.add(i);
-            map.put(parent[i], l);
+            adj[parent[i]].add(i);
         }
 
         this.parent=parent;
@@ -21,14 +30,25 @@ class LockingTree {
     public boolean lock(int num, int user) {
         if(lock[num]==-1){
             lock[num]=user;
+            int j=parent[num];
+            while(j!=-1){
+                locked[j].add(num);
+                j=parent[j];
+            }
             return true;
         }
+        
         return false;
     }
     
     public boolean unlock(int num, int user) {
         if(lock[num]==user){
             lock[num]=-1;
+            int j=parent[num];
+            while(j!=-1){
+                locked[j].remove(num);
+                j=parent[j];
+            }
             return true;
         }
         return false;
@@ -46,26 +66,29 @@ class LockingTree {
         Queue<Integer> q=new LinkedList<>();
         q.add(num);
 
-        List<Integer> locked=new ArrayList<>();
-        while(!q.isEmpty()){
-            int size=q.size();
-            boolean check=false;
+        // List<Integer> locked=new ArrayList<>();
+        // while(!q.isEmpty()){
+        //     int size=q.size();
 
-            for(int i=0;i<size;i++){
-                int curr=q.poll();
-                if(lock[curr]!=-1){
-                    locked.add(curr);
-                }
+        //     for(int i=0;i<size;i++){
+        //         int curr=q.poll();
+        //         if(lock[curr]!=-1){
+        //             locked.add(curr);
+        //         }
 
-                for(int k:map.getOrDefault(curr, new ArrayList<>())){
-                    q.add(k);
-                }
+        //         for(int k:adj[curr]){
+        //             q.add(k);
+        //         }
+        //     }
+        // }
+
+
+
+        if(locked[num].size()!=0){
+            for(int i : new ArrayList<>(locked[num])){
+                unlock(i, lock[i]);
             }
-        }
-
-        if(locked.size()!=0){
-            for(int i:locked)lock[i]=-1;
-            lock[num]=user;
+            lock(num, user);
             return true;
         }
         return false;
